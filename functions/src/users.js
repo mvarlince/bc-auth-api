@@ -1,4 +1,7 @@
+import jwt from 'jsonwebtoken'
 import dbConnect from "./dbConnect.js"
+import { secret_key } from '../service_account.js';
+import {secrets} from '../src/protectedRoutes'
 
 export function signup(req, res) {
   const { email, password } = req.body;
@@ -9,7 +12,9 @@ export function signup(req, res) {
   const db = dbConnect();
   db.collection('users').add(newUser)
     .then(doc => {
-      res.status(201).send({ success: true, user: { email, uid: doc.id }})
+      const user = {email, uid: doc.id}
+      const token = jwt.sign(user, secret_key)
+      res.status(201).send({ success: true, user, token})
     })
     .catch(err => {
       res.status(500).send({ success: false, message: err.message })
@@ -31,7 +36,8 @@ export function login(req, res) {
       }
       let user = users[0]
       user.password = undefined
-      res.status(200).send(user)
+      const token = jwt.sign(user, secret_key)
+      res.status(200).send({user, token})
     })
     .catch(err => {
       res.status(500).send({ success: false, message: err.message })
